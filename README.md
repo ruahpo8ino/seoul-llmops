@@ -4,7 +4,7 @@
 
 ## 📋 개요
 
-이 프로젝트는 서울시를 위한 작은 LLM(Large Language Model) 모델 학습 파이프라인입니다. [Axolotl](https://github.com/OpenAccess-AI-Collective/axolotl) 프레임워크를 활용하여 효율적인 모델 학습을 제공하고, FastAPI 기반의 추론 서버를 통해 API 서비스를 제공합니다.
+이 프로젝트는 서울시를 위한 LLM(Large Language Model) 모델 학습 파이프라인입니다. [Axolotl](https://github.com/OpenAccess-AI-Collective/axolotl) 프레임워크를 활용하여 효율적인 모델 학습을 제공하고, FastAPI 기반의 추론 서버를 통해 API 서비스를 제공합니다.
 
 ### 🎯 주요 특징
 
