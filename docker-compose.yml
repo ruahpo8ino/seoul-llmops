@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # 모델 학습 서비스
+  seoul-llm-training:
+    build: .
+    container_name: seoul-llm-training
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+    runtime: nvidia
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - huggingface_cache:/root/.cache/huggingface
+    working_dir: /app
+    command: >
+      bash -c "
+        echo '학습 환경 준비 중...' &&
+        python scripts/train_model.py --config config/seoul_llm_config.yml
+      "
+    profiles:
+      - training
+
+  # API 서버 서비스
+  seoul-llm-api:
+    build: .
+    container_name: seoul-llm-api
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - MODEL_PATH=/app/models/seoul-llm-lora/merged
+      - LORA_PATH=/app/models/seoul-llm-lora
+    runtime: nvidia
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - huggingface_cache:/root/.cache/huggingface
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    command: python api/server.py --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    profiles:
+      - api
+
+  # 개발 환경 (주피터 노트북 포함)
+  seoul-llm-dev:
+    build: .
+    container_name: seoul-llm-dev
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - JUPYTER_ENABLE_LAB=yes
+    runtime: nvidia
+    volumes:
+      - ./:/app
+      - huggingface_cache:/root/.cache/huggingface
+    ports:
+      - "8888:8888"  # Jupyter
+      - "8000:8000"  # API
+    working_dir: /app
+    command: >
+      bash -c "
+        pip install jupyter jupyterlab &&
+        jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+      "
+    profiles:
+      - dev
+
+volumes:
+  huggingface_cache:
+    driver: local
+
+networks:
+  default:
+    driver: bridge 

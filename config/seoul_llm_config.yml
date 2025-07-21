@@ -1,0 +1,84 @@
+# 서울시 AI Agent를 위한 LLM 학습 설정
+base_model: microsoft/DialoGPT-small  # 작은 모델로 시작
+model_type: AutoModelForCausalLM
+tokenizer_type: AutoTokenizer
+
+# 학습 데이터 설정
+datasets:
+  - path: data/seoul_dataset.jsonl
+    ds_type: json
+    type: 
+      system_prompt: "서울시 AI 어시스턴트로서 시민들의 질문에 도움이 되는 답변을 제공해주세요."
+      field_instruction: instruction
+      field_input: input
+      field_output: output
+      format: |
+        ### 질문: {instruction}
+        {input}
+        ### 답변: {output}
+      no_input_format: |
+        ### 질문: {instruction}
+        ### 답변: {output}
+
+# 모델 설정
+sequence_len: 512  # 작은 모델이므로 짧은 시퀀스 길이
+pad_to_sequence_len: true
+sample_packing: false
+
+# LoRA 설정 (효율적인 파인튜닝)
+adapter: lora
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+lora_target_modules:
+  - c_attn
+  - c_proj
+  - c_fc
+
+# 학습 하이퍼파라미터
+micro_batch_size: 4
+gradient_accumulation_steps: 2
+num_epochs: 3
+learning_rate: 0.0002
+warmup_steps: 100
+logging_steps: 10
+save_steps: 500
+eval_steps: 250
+save_total_limit: 3
+
+# 최적화 설정
+optimizer: adamw_torch
+weight_decay: 0.01
+max_grad_norm: 1.0
+
+# 정밀도 설정 (GPU 메모리 절약)
+fp16: true
+load_in_4bit: false  # 안정성을 위해 비활성화
+load_in_8bit: false
+
+# 출력 경로
+output_dir: ./models/seoul-llm
+lora_out_dir: ./models/seoul-llm-lora
+
+# 평가 설정
+val_set_size: 0.1
+train_on_inputs: false
+group_by_length: false
+
+# 로깅 설정 (선택사항)
+wandb_mode: disabled  # 로컬 환경에서는 비활성화
+# wandb_project: seoul-llm-training
+# wandb_entity: seoul-ai
+
+# 기타 설정
+gradient_checkpointing: true
+early_stopping_patience: 3
+seed: 42
+
+# 특수 토큰 설정
+special_tokens:
+  pad_token: "<|pad|>"
+
+# 데이터 전처리 설정
+dataset_prepared_path: ./data/prepared
+dataset_processes: 4 
